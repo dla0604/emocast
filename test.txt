@@ -1,0 +1,5 @@
+echo "# My First Git Project" > README.md
+git add README.md
+git commit -m "docs: 첫 번째 README 파일 추가"
+git branch -M main
+git push -u origin main
