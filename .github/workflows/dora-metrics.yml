@@ -1,0 +1,48 @@
+name: DORA Metrics Collector & Report Generator
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # 매주 월요일 자정 실행
+  workflow_dispatch: # 수동 실행 버튼 활성화
+
+jobs:
+  collect-dora-metrics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 리포트 커밋을 위한 권한
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 환경 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: DORA 지표 수집 및 JSON/마크다운 생성 스크립트 실행
+        run: |
+          mkdir -p .github/scripts
+          python .github/scripts/generate_dora_report.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+
+      - name: JSON 결과를 아티팩트로 저장 (선택 과제)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dora-metrics-json
+          path: dora_metrics.json
+          retention-days: 30
+
+      - name: 주간 리포트(Markdown) 자동 커밋 및 푸시
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add DORA_WEEKLY_REPORT.md
+          git commit -m "chore: DORA 주간 리포트 자동 생성" || echo "No changes to commit"
+          git push
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
