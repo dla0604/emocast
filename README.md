@@ -25,6 +25,7 @@ npm run dev
 ## 테스트 및 빌드
 
 ```bash
+npm run lint
 npm test
 npm run build
 ```
