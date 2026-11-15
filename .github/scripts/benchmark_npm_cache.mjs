@@ -76,7 +76,7 @@ const report = [
   '',
   `**Median install-time reduction: ${improvementPercent.toFixed(1)}%**`,
   '',
-  'Formula: `(cold median - warm median) / cold median × 100`. Paired runs use the same runner, commit, Node/npm versions, and lockfile; only npm cache state differs. This is a dependency-install microbenchmark, not a claim about total workflow wall time.',
+  'Formula: `(cold median - warm median) / cold median * 100`. Paired runs use the same runner, commit, Node/npm versions, and lockfile; only npm cache state differs. This is a dependency-install microbenchmark, not a claim about total workflow wall time.',
   '',
 ].join('\n');
 

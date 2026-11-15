@@ -14,9 +14,18 @@ The original CI already enabled npm caching through `actions/setup-node`, so rep
 
 On each benchmark run, three pairs of `npm ci` are measured sequentially on the same Ubuntu runner, Node/npm versions, commit, and lockfile. Each pair starts with a fresh npm cache; the first install uses `--prefer-online`, and the second reuses the populated cache with `--prefer-offline`. The report records each pair, the median times, and `(cold median - warm median) / cold median × 100`. Lint, build, tests, and total workflow duration are not part of this install-time comparison.
 
-The [pre-change PR run](https://github.com/dla0604/emocast/actions/runs/43698138668) completed in **2m 01s** (started 2026-11-15 09:12:48 UTC, completed 09:14:49 UTC). That is one observed run, not a controlled end-to-end comparison; runner and workflow variation prevent attributing elapsed-time differences to a single change. The optimized run's elapsed time and the paired install measurements will be added from its actual Actions run before finalizing this report.
+The [pre-change PR run](https://github.com/dla0604/emocast/actions/runs/43698138668) completed in **2m 01s** (started 2026-11-15 09:12:48 UTC, completed 09:14:49 UTC). The [optimized PR run](https://github.com/dla0604/emocast/actions/runs/43699035256) completed in **1m 00s** (started 09:23:35 UTC, completed 09:24:35 UTC), an observed wall-clock reduction of **50.4%**. The baseline ran 8 `npm ci` jobs across 4 OS/Node combinations; the optimized workflow passed all 6 combinations and ran 6 installs. These are single Actions runs, not a controlled end-to-end experiment; queue time, runner load, and the expanded matrix can affect the comparison, so the elapsed-time delta is observational rather than a causal performance claim.
 
-The PR's `npm Cache Benchmark` workflow uploads the measured values as the `npm-cache-benchmark` artifact (`.github/reports/CI_CACHE_BENCHMARK.md`). No cache timing values are prefilled because they must come from an actual Actions runner.
+The [paired cache benchmark](https://github.com/dla0604/emocast/actions/runs/43699035243) ran on Linux with Node.js 22.23.4 and npm 10.9.9:
+
+| Pair | Cold `npm ci` (s) | Warm `npm ci` (s) |
+| ---: | ---: | ---: |
+| 1 | 36.4 | 6.9 |
+| 2 | 35.7 | 3.5 |
+| 3 | 35.6 | 6.8 |
+| **Median** | **35.7** | **6.8** |
+
+The measured median dependency-install reduction was **80.9%**, calculated from the unrounded medians as `(cold median - warm median) / cold median * 100`; displayed times are rounded to tenths of a second. The PR workflow also uploads the raw generated report as the `npm-cache-benchmark` artifact.
 
 ## Deployment setup note
 
