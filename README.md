@@ -30,6 +30,8 @@ npm test
 npm run build
 ```
 
+GitHub Actions는 Node.js 20, 22, 24와 Ubuntu/Windows 조합으로 테스트합니다. 문서만 바뀐 경우 CI를 건너뛰며, 성공한 `main` 푸시에서 웹 앱 파일이 변경된 경우에만 GitHub Pages 배포를 시도합니다. 캐시 측정 방법과 CI 최적화 내역은 [CI 최적화 리포트](./.github/reports/CI_OPTIMIZATION_REPORT.md)를 참고하세요. PR의 `npm Cache Benchmark` 워크플로에서 cold/warm 설치 시간을 동일한 실행기에서 비교하며, 측정 결과는 `npm-cache-benchmark` 아티팩트로 제공됩니다.
+
 ## 향후 제품 방향
 
 향후에는 실제 문맥 기반 감정 분석, 대화 화자 분리, 더 자연스러운 TTS, 오디오 저장과 공유를 검토할 수 있습니다. README에 언급된 OpenAI TTS, ElevenLabs, VITS, KoBERT, FastAPI, PostgreSQL, Next.js/React Native, S3, Docker 등은 후보 기술이며 현재 프로토타입에 연동되어 있지 않습니다.

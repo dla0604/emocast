@@ -1,0 +1,40 @@
+name: Reusable Node CI
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: Runner label for this matrix job
+        required: true
+        type: string
+      node-version:
+        description: Node.js version for this matrix job
+        required: true
+        type: string
+      publish-pages-artifact:
+        description: Whether to publish the production Pages artifact
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  node-ci:
+    name: ${{ inputs.os }}, Node ${{ inputs.node-version }}
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run Node CI
+        uses: ./.github/actions/node-ci
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Upload Pages artifact
+        if: inputs.publish-pages-artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
