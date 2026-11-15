@@ -2,96 +2,81 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
-  workflow_dispatch:
+    branches:
+      - main
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
-  build:
-    name: Build (${{ matrix.os }}, Node ${{ matrix.node-version }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        node-version: [20, 22]
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      application: ${{ steps.filter.outputs.application }}
+      website: ${{ steps.filter.outputs.website }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
+          filters: |
+            application:
+              - 'src/**'
+              - 'index.html'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
+              - 'eslint.config.js'
+              - '.github/actions/**'
+              - '.github/workflows/**'
+              - '.github/scripts/benchmark_npm_cache.mjs'
+            website:
+              - 'src/**'
+              - 'index.html'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.os }}-node-${{ matrix.node-version }}
-          path: dist/
-          if-no-files-found: error
-          retention-days: 7
-
-  test:
-    name: Test (${{ matrix.os }}, Node ${{ matrix.node-version }})
-    needs: build
-    runs-on: ${{ matrix.os }}
+  quality:
+    name: Lint, build, and test
+    needs: changes
+    if: needs.changes.outputs.application == 'true'
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node-version: [20, 22]
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-${{ matrix.os }}-node-${{ matrix.node-version }}
-          path: dist/
-
-      - name: Verify build artifact
-        run: node --input-type=module -e "import { access } from 'node:fs/promises'; await access('dist/index.html')"
-
-      - name: Run tests
-        run: npm test
+        node: [20, 22, 24]
+    uses: ./.github/workflows/node-ci.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node }}
+      publish-pages-artifact: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.node == 22 }}
 
   deploy:
-    name: Deploy (disabled)
-    if: ${{ false }}
-    needs: [build, test]
+    name: Deploy GitHub Pages
+    needs: [changes, quality]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.website == 'true' && needs.quality.result == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: true
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: dist-*
-          path: dist/
-          merge-multiple: true
-
-      - name: Deployment placeholder
-        run: echo "Deployment is disabled until a target is selected."
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

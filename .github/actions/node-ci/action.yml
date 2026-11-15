@@ -1,0 +1,30 @@
+name: Node CI
+description: Set up Node.js, install dependencies, and run lint, build, and tests
+inputs:
+  node-version:
+    description: Node.js version to use
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js with npm cache
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Lint
+      shell: bash
+      run: npm run lint
+
+    - name: Build
+      shell: bash
+      run: npm run build
+
+    - name: Run tests
+      shell: bash
+      run: npm test
